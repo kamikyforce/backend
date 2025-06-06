@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "nodemon src/server.ts",
     "build": "tsc",
-    "start": "node dist/src/server.js",
+    "start": "node dist/server.js",
     "test": "jest",
     "test:watch": "jest --watch",
     "prisma:generate": "prisma generate",
