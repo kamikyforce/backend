@@ -5,7 +5,7 @@ import prisma from './config/database';
 import redisClient from './config/redis';
 import { initSocketHandler } from './services/reservationService';
 
-const PORT = process.env.PORT || 5000;
+const PORT = Number(process.env.PORT) || 5000;
 
 const server = createServer(app);
 
@@ -56,7 +56,7 @@ async function startServer() {
   await connectDatabase();
   await connectRedis();
   
-  server.listen(PORT, () => {
+  server.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on port ${PORT}`);
     console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
   });
