@@ -6,10 +6,9 @@ import redisClient from './config/redis';
 import { initSocketHandler } from './services/reservationService';
 
 const PORT = Number(process.env.PORT) || 3000;
-const HOST = '0.0.0.0'; // Add this line
+const HOST = '0.0.0.0';
 
 const server = createServer(app);
-
 const socketHandler = initSocketHandler(server);
 
 async function connectDatabase() {
@@ -57,16 +56,10 @@ async function startServer() {
   await connectDatabase();
   await connectRedis();
   
-  // Update the server.listen call at the end of the file
-  server.listen(PORT, HOST, async () => {
-    await connectDatabase();
-    await connectRedis();
+  server.listen(PORT, HOST, () => {
     console.log(`Server running on ${HOST}:${PORT}`);
     console.log(`Environment: ${process.env.NODE_ENV}`);
   });
 }
 
-startServer().catch((error) => {
-  console.error('Failed to start server:', error);
-  process.exit(1);
-});
+startServer().catch(console.error);
