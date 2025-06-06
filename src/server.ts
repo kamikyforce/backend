@@ -5,8 +5,9 @@ import prisma from './config/database';
 import redisClient from './config/redis';
 import { initSocketHandler } from './services/reservationService';
 
+// Fly.io sets PORT via environment variable
 const PORT = Number(process.env.PORT) || 3000;
-const HOST = '0.0.0.0';
+const HOST = '0.0.0.0'; // Required for Fly.io
 
 const server = createServer(app);
 let socketHandler: any;
@@ -33,16 +34,23 @@ async function connectRedis() {
     console.log('Connected to Redis');
   } catch (error) {
     console.error('Redis connection error:', error);
-    // Don't exit process for Redis errors, continue without Redis
+    // Don't exit process for Redis errors in Fly.io - continue without Redis
+    console.log('Continuing without Redis...');
   }
 }
 
 async function gracefulShutdown(signal: string) {
   console.log(`${signal} received, shutting down gracefully`);
   
-  // Close HTTP server
+  // Close HTTP server with timeout for Fly.io
+  const shutdownTimeout = setTimeout(() => {
+    console.log('Forced shutdown due to timeout');
+    process.exit(1);
+  }, 10000); // 10 second timeout
+  
   server.close(() => {
     console.log('HTTP server closed');
+    clearTimeout(shutdownTimeout);
   });
   
   try {
@@ -62,6 +70,7 @@ async function gracefulShutdown(signal: string) {
   process.exit(0);
 }
 
+// Fly.io sends SIGTERM for graceful shutdowns
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
@@ -79,29 +88,34 @@ process.on('unhandledRejection', (reason, promise) => {
 
 async function startServer() {
   try {
+    console.log('Starting server...');
+    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`Target port: ${PORT}`);
+    
     // Connect to database first
     await connectDatabase();
     
-    // Connect to Redis (non-blocking)
+    // Connect to Redis (non-blocking for Fly.io)
     await connectRedis();
     
     // Initialize socket handler after connections are established
     socketHandler = initSocketHandler(server);
     
-    // Start the server
+    // Start the server - critical for Fly.io health checks
     server.listen(PORT, HOST, () => {
-      console.log(`Server running on ${HOST}:${PORT}`);
-      console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-      console.log('Server started successfully');
+      console.log(`✅ Server running on ${HOST}:${PORT}`);
+      console.log(`🚀 Environment: ${process.env.NODE_ENV || 'development'}`);
+      console.log('✅ Server started successfully');
+      console.log(`🔗 Health check available at: http://${HOST}:${PORT}/api/health`);
     });
     
   } catch (error) {
-    console.error('Failed to start server:', error);
+    console.error('❌ Failed to start server:', error);
     process.exit(1);
   }
 }
 
 startServer().catch((error) => {
-  console.error('Server startup error:', error);
+  console.error('❌ Server startup error:', error);
   process.exit(1);
 });
