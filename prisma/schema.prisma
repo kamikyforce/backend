@@ -1,0 +1,70 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-arm64-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String        @id @default(cuid())
+  email         String        @unique
+  password      String
+  firstName     String
+  lastName      String
+  role          Role          @default(USER)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  createdEvents Event[]       @relation("EventCreator")
+  reservations  Reservation[]
+
+  @@map("users")
+}
+
+model Event {
+  id             String        @id @default(cuid())
+  name           String        @unique
+  description    String?
+  eventDate      DateTime
+  location       String?
+  onlineLink     String?
+  maxCapacity    Int
+  availableSpots Int
+  creatorId      String
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  creator        User          @relation("EventCreator", fields: [creatorId], references: [id])
+  reservations   Reservation[]
+
+  @@map("events")
+}
+
+model Reservation {
+  id              String            @id @default(cuid())
+  eventId         String
+  userId          String
+  reservationDate DateTime          @default(now())
+  status          ReservationStatus @default(CONFIRMED)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  event           Event             @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+  @@map("reservations")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum ReservationStatus {
+  CONFIRMED
+  CANCELED
+}
