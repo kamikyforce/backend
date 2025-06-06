@@ -5,7 +5,7 @@ import prisma from './config/database';
 import redisClient from './config/redis';
 import { initSocketHandler } from './services/reservationService';
 
-const PORT = Number(process.env.PORT) || 5000;
+const PORT = Number(process.env.PORT) || 8080;
 
 const server = createServer(app);
 
